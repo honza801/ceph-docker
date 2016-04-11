@@ -11,6 +11,7 @@ set -e
 : ${MDS_NAME:=mds-${HOSTNAME}}
 : ${OSD_FORCE_ZAP:=0}
 : ${OSD_JOURNAL_SIZE:=100}
+: ${OSD_DIRECTORY_READY:=/var/lib/ceph/osd/ready}
 : ${CRUSH_LOCATION:=root=default host=${HOSTNAME}}
 : ${CEPHFS_CREATE:=0}
 : ${CEPHFS_NAME:=cephfs}
@@ -250,7 +251,7 @@ function osd_directory {
   chown ceph. /var/lib/ceph/osd
 
   # check if anything is there, if not create an osd with directory
-  if [[ -n "$(find /var/lib/ceph/osd -prune -empty)" ]]; then
+  if [[ ! -f "${OSD_DIRECTORY_READY}" ]]; then
     echo "Creating osd with ceph --cluster ${CLUSTER} osd create"
     OSD_ID=$(ceph --cluster ${CLUSTER} osd create)
     if [ "$OSD_ID" -eq "$OSD_ID" ] 2>/dev/null; then
@@ -264,6 +265,7 @@ function osd_directory {
     mkdir -p /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}
     chown ceph. /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}
     echo "created folder /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}"
+    touch "${OSD_DIRECTORY_READY}"
   fi
 
   for OSD_ID in $(ls /var/lib/ceph/osd |  awk 'BEGIN { FS = "-" } ; { print $2 }'); do
@@ -307,16 +309,12 @@ function osd_directory {
       ceph ${CEPH_OPTS} --name=osd.${OSD_ID} --keyring=/var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring osd crush create-or-move -- ${OSD_ID} ${OSD_WEIGHT} ${CRUSH_LOCATION}
     fi
 
-    mkdir -p /etc/service/${CLUSTER}-${OSD_ID}
-    cat >/etc/service/${CLUSTER}-${OSD_ID}/run <<EOF
-#!/bin/bash
-echo "store-daemon: starting daemon on ${HOSTNAME}..."
-exec ceph-osd ${CEPH_OPTS} -f -d -i ${OSD_ID} --osd-journal ${OSD_J} -k /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring
-EOF
-    chmod +x /etc/service/${CLUSTER}-${OSD_ID}/run
-  done
+    ceph-osd -i ${OSD_ID} -f -d --cluster ${CLUSTER} --setuser ceph --setgroup ceph &
 
-exec /sbin/my_init
+  done
+  
+  #/bin/bash
+  exec /sbin/init
 }
 
 #########################
