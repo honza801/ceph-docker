@@ -1,23 +1,23 @@
 # CEPH BASE IMAGE
-# CEPH VERSION: Infernalis
-# CEPH VERSION DETAIL: 9.2.x
+# CEPH VERSION: Jewel
+# CEPH VERSION DETAIL: 10.2.x
 
 FROM debian:jessie
 MAINTAINER Jan Krcmar <honza801@gmail.com>
 
 #ENV ETCDCTL_VERSION v2.2.4
 #ENV ETCDCTL_ARCH linux-amd64
-ENV CEPH_VERSION infernalis
+ENV CEPH_VERSION jewel
 
 #ENV KVIATOR_VERSION 0.0.5
 #ENV CONFD_VERSION 0.10.0
 
 # Install prerequisites
-RUN apt-get update &&  apt-get install -y curl uuid-runtime
+RUN apt-get update && apt-get install -y curl uuid-runtime
 
 # Install Ceph
 RUN curl -s 'https://download.ceph.com/keys/release.asc' | apt-key add -
-RUN echo deb http://ceph.com/debian-${CEPH_VERSION}/ jessie main | tee /etc/apt/sources.list.d/ceph-${CEPH_VERSION}.list
+RUN echo deb http://download.ceph.com/debian-${CEPH_VERSION}/ jessie main | tee /etc/apt/sources.list.d/ceph-${CEPH_VERSION}.list
 RUN apt-get update && apt-get install -y --force-yes ceph radosgw && \
 apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
