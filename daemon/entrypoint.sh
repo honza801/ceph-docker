@@ -9,6 +9,7 @@ set -e
 : ${MON_NAME:=${HOSTNAME}}
 : ${NETWORK_AUTO_DETECT:=0}
 : ${MDS_NAME:=mds-${HOSTNAME}}
+: ${OSD_ID:=}
 : ${OSD_FORCE_ZAP:=0}
 : ${OSD_JOURNAL_SIZE:=100}
 : ${OSD_DIRECTORY_READY:=/var/lib/ceph/osd/ready}
@@ -253,7 +254,7 @@ function osd_directory {
   # check if anything is there, if not create an osd with directory
   if [[ ! -f "${OSD_DIRECTORY_READY}" ]]; then
     echo "Creating osd with ceph --cluster ${CLUSTER} osd create"
-    OSD_ID=$(ceph --cluster ${CLUSTER} osd create)
+    test -z "$OSD_ID" && OSD_ID=$(ceph --cluster ${CLUSTER} osd create)
     if [ "$OSD_ID" -eq "$OSD_ID" ] 2>/dev/null; then
         echo "OSD created with ID: ${OSD_ID}"
     else
