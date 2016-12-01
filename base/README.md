@@ -1,6 +1,6 @@
 # ceph-base
 
-Ceph base image (ubuntu 14.04 with the latest Ceph release installed).
+Ceph base image (debian jessie)
 
 ## Docker Hub/Registry location
 
