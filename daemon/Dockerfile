@@ -4,7 +4,7 @@
 #
 # VERSION 0.0.1
 
-FROM fous/ceph/base:jewel
+FROM fous/ceph/base
 MAINTAINER Jan Krcmar <honza801@gmail.com>
 
 # Add bootstrap script
