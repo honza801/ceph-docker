@@ -7,13 +7,13 @@ MAINTAINER Jan Krcmar <honza801@gmail.com>
 
 #ENV ETCDCTL_VERSION v2.2.4
 #ENV ETCDCTL_ARCH linux-amd64
-ENV CEPH_VERSION jewel
+ENV CEPH_VERSION kraken
 
 #ENV KVIATOR_VERSION 0.0.5
 #ENV CONFD_VERSION 0.10.0
 
 # Install prerequisites
-RUN apt-get update && apt-get install -y curl uuid-runtime
+RUN apt-get update && apt-get install -y curl uuid-runtime apt-transport-https
 
 # Install Ceph
 RUN curl -s 'https://download.ceph.com/keys/release.asc' | apt-key add -
