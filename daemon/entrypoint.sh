@@ -30,9 +30,7 @@ set -e
 : ${RESTAPI_BASE_URL:=/api/v0.1}
 : ${RESTAPI_LOG_LEVEL:=warning}
 : ${RESTAPI_LOG_FILE:=/var/log/ceph/ceph-restapi.log}
-: ${KV_TYPE:=none} # valid options: consul, etcd or none
-: ${KV_IP:=127.0.0.1}
-: ${KV_PORT:=4001} # PORT 8500 for Consul
+: ${MGR_NAME:=${HOSTNAME}}
 
 CEPH_OPTS="--cluster ${CLUSTER}"
 
@@ -63,49 +61,8 @@ chown ceph. /var/run/ceph
 # Configuration generator #
 ###########################
 
-# Load in the bootstrapping routines
-# based on the data store
-case "$KV_TYPE" in
-   etcd|consul)
-      source /config.kv.sh
-      ;;
-   *)
-      source /config.static.sh
-      ;;
-esac
+source /config.static.sh
 
-##########
-# CONFIG #
-##########
-function kv {
-	# Note the 'cas' command puts a value in the KV store if it is empty
-	KEY="$1"
-	shift
-	VALUE="$*"
-	echo "adding key ${KEY} with value ${VALUE} to KV store"
-	kviator --kvstore=${KV_TYPE} --client=${KV_IP}:${KV_PORT} cas ${CLUSTER_PATH}"${KEY}" "${VALUE}" || echo "value is already set"
-}
-
-function populate_kv {
-    CLUSTER_PATH=ceph-config/${CLUSTER}
-    case "$KV_TYPE" in
-       etcd|consul)
-          # if ceph.defaults found in /etc/ceph/ use that
-          if [[ -e "/etc/ceph/ceph.defaults" ]]; then
-            DEFAULTS_PATH="/etc/ceph/ceph.defaults"
-          else
-          # else use defaults
-            DEFAULTS_PATH="/ceph.defaults"
-          fi
-          # read defaults file, grab line with key<space>value without comment #
-          cat "$DEFAULTS_PATH" | grep '^.* .*' | grep -v '#' | while read line; do
-            kv `echo $line`
-          done
-          ;;
-       *)
-          ;;
-    esac
-}
 
 #######
 # MON #
@@ -536,6 +493,37 @@ ENDHERE
 
 }
 
+
+#######
+# MGR #
+#######
+
+function start_mgr {
+  get_config
+  check_config
+  create_socket_dir
+  
+  # Check to see if our MGR has been initialized
+  MGR_KEYRING=/var/lib/ceph/mgr/${CLUSTER}-${MGR_NAME}/keyring
+  if [ ! -e $MGR_KEYRING ]; then
+    get_admin_key
+    check_admin_key
+
+    # Make the monitor directory
+    mkdir -p $(dirname $MGR_KEYRING)
+    chown ceph. $(dirname $MGR_KEYRING)
+
+    # Create ceph-mgr key
+    ceph ${CEPH_OPTS} auth get-or-create mgr.$MGR_NAME mon 'allow *' -o $MGR_KEYRING
+    chown ceph. $MGR_KEYRING
+    chmod 600 $MGR_KEYRING
+  fi
+
+  # start ceph-mgr
+  exec /usr/bin/ceph-mgr ${CEPH_OPTS} -d -i ${MGR_NAME} --setuser ceph --setgroup ceph
+}
+
+
 ###############
 # CEPH_DAEMON #
 ###############
@@ -546,9 +534,6 @@ CEPH_DAEMON=$(echo ${CEPH_DAEMON} |tr '[:upper:]' '[:lower:]')
 # If we are given a valid first argument, set the
 # CEPH_DAEMON variable from it
 case "$CEPH_DAEMON" in
-   populate_kvstore)
-      populate_kv
-      ;;
    mds)
       start_mds
       ;;
@@ -577,16 +562,22 @@ case "$CEPH_DAEMON" in
    rgw)
       start_rgw
       ;;
+   mgr)
+      start_mgr
+      ;;
    restapi)
       start_restapi
       ;;
    *)
       if [ ! -n "$CEPH_DAEMON" ]; then
-          echo "ERROR- One of CEPH_DAEMON or a daemon parameter must be defined as the name "
+          echo "One of CEPH_DAEMON or a daemon parameter must be defined as the name "
           echo "of the daemon you want to deploy."
           echo "Valid values for CEPH_DAEMON are MON, OSD, OSD_DIRECTORY, OSD_CEPH_DISK, OSD_CEPH_DISK_PREPARE, OSD_CEPH_DISK_ACTIVATE, MDS, RGW, RESTAPI"
           echo "Valid values for the daemon parameter are mon, osd, osd_directory, osd_ceph_disk, osd_ceph_disk_prepare, osd_ceph_disk_activate, mds, rgw, restapi"
-          exit 1
+          #exit 1
+          /bin/bash
+      else
+          $@
       fi
       ;;
 esac

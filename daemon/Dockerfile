@@ -1,29 +1,38 @@
-# DOCKER-VERSION 1.0.0
 #
-# Ceph Daemon
+# Ceph container
 #
 # VERSION 0.0.1
 
-FROM fous/ceph/base
+FROM debian:jessie
 MAINTAINER Jan Krcmar <honza801@gmail.com>
+
+ENV CEPH_VERSION kraken
+
+RUN apt-get update && apt-get install -y curl uuid-runtime apt-transport-https
+
+# Install Ceph
+RUN curl -s https://download.ceph.com/keys/release.asc | apt-key add -
+RUN echo deb http://download.ceph.com/debian-${CEPH_VERSION}/ jessie main | tee /etc/apt/sources.list.d/ceph-${CEPH_VERSION}.list
+RUN apt-get update && apt-get install -y --force-yes ceph radosgw
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Add bootstrap script
 ADD entrypoint.sh /entrypoint.sh
-ADD config.*.sh /
+ADD config.static.sh /
 
-ADD my_init/my_init /sbin/my_init
-RUN chmod +x /sbin/my_init
-RUN mkdir -p /etc/container_environment
+#ADD my_init/my_init /sbin/my_init
+#RUN chmod +x /sbin/my_init
+#RUN mkdir -p /etc/container_environment
 
-ADD 2.sh /etc/runit/2
-RUN chmod +x /etc/runit/2
+#ADD 2.sh /etc/runit/2
+#RUN chmod +x /etc/runit/2
 
 # ceph defaults key/values for KV store
-ADD ceph.defaults /
+#ADD ceph.defaults /
 
 # Add templates for confd
-ADD ./confd/templates/* /etc/confd/templates/
-ADD ./confd/conf.d/* /etc/confd/conf.d/
+#ADD ./confd/templates/* /etc/confd/templates/
+#ADD ./confd/conf.d/* /etc/confd/conf.d/
 
 # Add volumes for Ceph config and data
 VOLUME ["/etc/ceph","/var/lib/ceph"]

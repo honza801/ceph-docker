@@ -8,6 +8,8 @@ function get_admin_key {
 
 function get_mon_config {
   if [ ! -e /etc/ceph/${CLUSTER}.conf ]; then
+    echo "Error /etc/ceph/${CLUSTER}.conf is missing, see on howto create $0"
+    exit 1
     fsid=$(uuidgen)
     cat <<ENDHERE >/etc/ceph/${CLUSTER}.conf
 [global]
