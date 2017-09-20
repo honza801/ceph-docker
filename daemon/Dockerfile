@@ -7,6 +7,7 @@ FROM debian:jessie
 MAINTAINER Jan Krcmar <honza801@gmail.com>
 
 ENV CEPH_VERSION kraken
+ENV TIMEZONE Europe/Prague
 
 RUN apt-get update && apt-get install -y curl uuid-runtime apt-transport-https
 
@@ -17,6 +18,7 @@ RUN apt-get update && apt-get install -y --force-yes ceph radosgw
 # mgr ma tyto  zavislosti
 RUN apt-get install -y --force-yes python-cherrypy3 python-django python-dateutil python-djangorestframework
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN echo ${TIMEZONE} > /etc/timezone && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure tzdata
 
 # Add bootstrap script
 ADD entrypoint.sh /entrypoint.sh
