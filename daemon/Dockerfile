@@ -2,6 +2,8 @@
 # Ceph container
 #
 # VERSION 0.0.1
+#
+# docker build --tag fous/ceph:11.2.0 --force-rm --no-cache .
 
 FROM debian:jessie
 MAINTAINER Jan Krcmar <honza801@gmail.com>
