@@ -3,12 +3,12 @@
 #
 # VERSION 0.0.1
 #
-# docker build --tag fous/ceph:11.2.0 --force-rm --no-cache .
+# docker build --tag fous/ceph:xx.x.x --force-rm --no-cache .
 
 FROM debian:jessie
 MAINTAINER Jan Krcmar <honza801@gmail.com>
 
-ENV CEPH_VERSION kraken
+ENV CEPH_VERSION luminous
 ENV TIMEZONE Europe/Prague
 
 RUN apt-get update && apt-get install -y curl uuid-runtime apt-transport-https
