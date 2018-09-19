@@ -1,0 +1,46 @@
+#
+# Ceph container
+#
+# VERSION 0.0.1
+#
+# docker build --tag fous/ceph:xx.x.x --force-rm --no-cache .
+
+FROM centos:latest
+MAINTAINER Jan Krcmar <honza801@gmail.com>
+
+ENV CEPH_VERSION luminous
+ENV TIMEZONE Europe/Prague
+
+# Install Ceph
+#RUN yum install -y centos-release-ceph-${CEPH_VERSION}
+RUN yum update -y
+RUN rpm -Uvh https://download.ceph.com/rpm-${CEPH_VERSION}/el7/noarch/ceph-release-1-1.el7.noarch.rpm
+RUN rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+RUN yum install -y ceph ceph-radosgw
+RUN yum clean all
+RUN ln -sfn /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
+
+# Add bootstrap script
+ADD entrypoint.sh /entrypoint.sh
+ADD config.static.sh /
+
+#ADD my_init/my_init /sbin/my_init
+#RUN chmod +x /sbin/my_init
+#RUN mkdir -p /etc/container_environment
+
+#ADD 2.sh /etc/runit/2
+#RUN chmod +x /etc/runit/2
+
+# ceph defaults key/values for KV store
+#ADD ceph.defaults /
+
+# Add templates for confd
+#ADD ./confd/templates/* /etc/confd/templates/
+#ADD ./confd/conf.d/* /etc/confd/conf.d/
+
+# Add volumes for Ceph config and data
+VOLUME ["/etc/ceph","/var/lib/ceph"]
+
+# Execute the entrypoint
+WORKDIR /
+ENTRYPOINT ["/entrypoint.sh"]
