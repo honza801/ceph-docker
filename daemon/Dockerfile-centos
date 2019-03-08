@@ -3,12 +3,12 @@
 #
 # VERSION 0.0.1
 #
-# docker build --tag fous/ceph:xx.x.x --force-rm --no-cache .
+# docker build --tag hador24.ics.muni.cz/ceph-centos:xx.x.x --force-rm --no-cache .
 
 FROM centos:latest
 MAINTAINER Jan Krcmar <honza801@gmail.com>
 
-ENV CEPH_VERSION luminous
+ENV CEPH_VERSION mimic
 ENV TIMEZONE Europe/Prague
 
 # Install Ceph
