@@ -243,7 +243,11 @@ function osd_directory {
     if [ ! -e /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring ]; then
       chown ceph. /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}
       # Create OSD key and file structure
-      ceph-osd ${CEPH_OPTS} -i $OSD_ID --mkfs --mkkey --mkjournal --osd-journal ${OSD_J} --setuser ceph --setgroup ceph
+      OSD_SECRET=$(ceph-authtool --gen-print-key)
+      ceph-authtool --create-keyring /var/lib/ceph/osd/ceph-$OSD_ID/keyring --name osd.$OSD_ID --add-key $OSD_SECRET
+      chown ceph. /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring
+      chmod 0600 /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring
+      ceph-osd ${CEPH_OPTS} -i $OSD_ID --mkfs --mkkey --mkjournal --osd-journal ${OSD_J} --setuser ceph --setgroup ceph --no-mon-config
 
       if [ ! -e /var/lib/ceph/bootstrap-osd/${CLUSTER}.keyring ]; then
         echo "ERROR- /var/lib/ceph/bootstrap-osd/${CLUSTER}.keyring must exist. You can extract it from your current monitor by running 'ceph auth get client.bootstrap-osd -o /var/lib/ceph/bootstrap-osd/${CLUSTER}.keyring'"
@@ -253,10 +257,8 @@ function osd_directory {
       timeout 10 ceph ${CEPH_OPTS} --name client.bootstrap-osd --keyring /var/lib/ceph/bootstrap-osd/${CLUSTER}.keyring health || exit 1
 
       # Add the OSD key
-      ceph ${CEPH_OPTS} --name client.bootstrap-osd --keyring /var/lib/ceph/bootstrap-osd/${CLUSTER}.keyring auth add osd.${OSD_ID} -i /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring osd 'allow *' mon 'allow profile osd'  || echo $1
+      ceph ${CEPH_OPTS} --name client.bootstrap-osd --keyring /var/lib/ceph/bootstrap-osd/${CLUSTER}.keyring auth add osd.${OSD_ID} -i /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring osd 'allow *' mon 'allow profile osd' mgr 'allow profile osd' || echo $1
       echo "done adding key"
-      chown ceph. /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring
-      chmod 0600 /var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring
 
       # Add the OSD to the CRUSH map
       if [ ! -n "${HOSTNAME}" ]; then
