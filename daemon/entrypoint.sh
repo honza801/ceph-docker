@@ -270,6 +270,7 @@ function osd_directory {
     fi
 
     ceph-osd -i ${OSD_ID} -f -d --cluster ${CLUSTER} --setuser ceph --setgroup ceph &
+    sleep 2s
 
   done
   
