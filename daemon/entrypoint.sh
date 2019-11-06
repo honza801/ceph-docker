@@ -226,7 +226,7 @@ function osd_directory {
     touch "${OSD_DIRECTORY_READY}"
   fi
 
-  for OSD_ID in $(ls /var/lib/ceph/osd |  awk 'BEGIN { FS = "-" } ; { print $2 }'); do
+  #for OSD_ID in $(ls /var/lib/ceph/osd |  awk 'BEGIN { FS = "-" } ; { print $2 }'); do
     if [ -n "${JOURNAL_DIR}" ]; then
        OSD_J="${JOURNAL_DIR}/journal.${OSD_ID}"
        chown -R ceph. ${JOURNAL_DIR}
@@ -269,13 +269,13 @@ function osd_directory {
       ceph ${CEPH_OPTS} --name=osd.${OSD_ID} --keyring=/var/lib/ceph/osd/${CLUSTER}-${OSD_ID}/keyring osd crush create-or-move -- ${OSD_ID} ${OSD_WEIGHT} ${CRUSH_LOCATION}
     fi
 
-    ceph-osd -i ${OSD_ID} -f -d --cluster ${CLUSTER} --setuser ceph --setgroup ceph &
-    sleep 2s
+    sleep 10s
+    ceph-osd -i ${OSD_ID} -f -d --cluster ${CLUSTER} --setuser ceph --setgroup ceph
 
-  done
+  #done
   
   #/bin/bash
-  exec /sbin/init
+  #exec /sbin/init
 }
 
 #########################
