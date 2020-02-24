@@ -5,7 +5,7 @@
 #
 # docker build --tag hador24.ics.muni.cz/ceph-centos:xx.x.x --force-rm --no-cache .
 
-FROM centos:latest
+FROM centos:7
 MAINTAINER Jan Krcmar <honza801@gmail.com>
 
 ENV CEPH_VERSION mimic
@@ -13,7 +13,7 @@ ENV TIMEZONE Europe/Prague
 
 # Install Ceph
 #RUN yum install -y centos-release-ceph-${CEPH_VERSION}
-RUN yum update -y
+RUN yum update -y || echo TEMPORARY IGNORE FAILED INSTALL OF SHADOW-UTILS
 RUN rpm -Uvh https://download.ceph.com/rpm-${CEPH_VERSION}/el7/noarch/ceph-release-1-1.el7.noarch.rpm
 RUN rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 RUN yum install -y ceph ceph-radosgw
